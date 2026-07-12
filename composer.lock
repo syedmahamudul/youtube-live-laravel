@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "53b5d56b3b7e3cbac1713e68c8850f6c",
+    "content-hash": "f34d29569965d55f129a7ee8da393f1b",
     "packages": [
         {
             "name": "brick/math",
@@ -3298,6 +3298,75 @@
                 "source": "https://github.com/ramsey/uuid/tree/4.9.3"
             },
             "time": "2026-06-18T03:57:49+00:00"
+        },
+        {
+            "name": "syedmahamudul/sslcommerz-laravel",
+            "version": "v1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/syedmahamudul/laravel-sslcommerz.git",
+                "reference": "5d0a8a14b0003ce1738283e6407f7e0331a645b7"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/syedmahamudul/laravel-sslcommerz/zipball/5d0a8a14b0003ce1738283e6407f7e0331a645b7",
+                "reference": "5d0a8a14b0003ce1738283e6407f7e0331a645b7",
+                "shasum": ""
+            },
+            "require": {
+                "guzzlehttp/guzzle": "*",
+                "illuminate/http": "*",
+                "illuminate/support": "*",
+                "php": "*"
+            },
+            "require-dev": {
+                "orchestra/testbench": "*",
+                "phpunit/phpunit": "*"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "aliases": {
+                        "Sslcommerz": "Syedmahamudul\\Sslcommerz\\Facades\\Sslcommerz"
+                    },
+                    "providers": [
+                        "Syedmahamudul\\Sslcommerz\\Providers\\SslcommerzServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "files": [
+                    "src/helpers.php"
+                ],
+                "psr-4": {
+                    "Syedmahamudul\\Sslcommerz\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Syed Mahamudul Hassan",
+                    "email": "syedmahamudhassan@gmail.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "SSLCommerz Payment Gateway Integration Package for Laravel",
+            "homepage": "https://github.com/syedmahamudul/laravel-sslcommerz",
+            "keywords": [
+                "bangladesh",
+                "laravel",
+                "payment",
+                "payment-gateway",
+                "sslcommerz"
+            ],
+            "support": {
+                "issues": "https://github.com/syedmahamudul/laravel-sslcommerz/issues",
+                "source": "https://github.com/syedmahamudul/laravel-sslcommerz/tree/v1.0.0"
+            },
+            "time": "2026-07-02T19:32:00+00:00"
         },
         {
             "name": "symfony/clock",
