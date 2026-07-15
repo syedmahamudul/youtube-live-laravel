@@ -18,15 +18,22 @@ class LiveClassService
 
     private function checkClassStatus(LiveClass $liveClass): bool
     {
+        // If class is completed, it's not live
         if ($liveClass->status === 'completed') {
             return false;
         }
 
+        // If class is upcoming, it's not live yet
         if ($liveClass->isUpcoming()) {
             return false;
         }
 
-        // Method 1: Check via M3U8 playlist
+        // Check if it's a YouTube class by checking if youtube_video_id exists
+        if (!empty($liveClass->youtube_video_id)) {
+            return $this->checkYouTubeLiveStatus($liveClass);
+        }
+
+        // Method 1: Check via M3U8 playlist (for HLS streams)
         if ($this->checkM3U8Stream($liveClass)) {
             return true;
         }
@@ -44,8 +51,69 @@ class LiveClassService
         return false;
     }
 
-    private function checkM3U8Stream(LiveClass $liveClass): bool
+    /**
+     * Check YouTube live status
+     */
+    private function checkYouTubeLiveStatus(LiveClass $liveClass): bool
     {
+        // dd('kk');
+        if (empty($liveClass->youtube_video_id)) {
+            return false;
+        }
+
+        try {
+            $apiKey = env('YOUTUBE_API_KEY');
+            
+            if (!$apiKey || $apiKey === 'AIzaSy_Your_Generated_Key_Here') {
+                Log::warning('YouTube API key not configured');
+                return false;
+            }
+
+            $response = Http::timeout(5)->get(
+                'https://www.googleapis.com/youtube/v3/videos',
+                [
+                    'part' => 'liveStreamingDetails,snippet,status',
+                    'id' => $liveClass->youtube_video_id,
+                    'key' => $apiKey
+                ]
+            );
+
+            if ($response->successful()) {
+                $data = $response->json();
+                
+                if (empty($data['items'])) {
+                    return false;
+                }
+
+                $video = $data['items'][0];
+                
+                // Check if it's currently live
+                if (isset($video['snippet']['liveBroadcastContent'])) {
+                    return $video['snippet']['liveBroadcastContent'] === 'live';
+                }
+
+                // Check live streaming details
+                if (isset($video['liveStreamingDetails'])) {
+                    $details = $video['liveStreamingDetails'];
+                    if (isset($details['actualStartTime']) && !isset($details['actualEndTime'])) {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+            
+            Log::error("YouTube API error: " . $response->status());
+            return false;
+
+        } catch (\Exception $e) {
+            Log::error("YouTube API exception: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    private function checkM3U8Stream(LiveClass $liveClass): bool
+    {  
         if (!$liveClass->stream_url) {
             return false;
         }
@@ -53,7 +121,7 @@ class LiveClassService
         try {
             $m3u8Url = rtrim($liveClass->stream_url, '/') . '/playlist.m3u8';
             $response = Http::timeout(3)->head($m3u8Url);
-
+            
             if ($response->successful()) {
                 $contentType = $response->header('Content-Type');
                 return str_contains($contentType, 'application/vnd.apple.mpegurl') || 
@@ -62,6 +130,7 @@ class LiveClassService
         } catch (\Exception $e) {
             Log::info("M3U8 check failed: " . $e->getMessage());
         }
+        
         return false;
     }
 
@@ -134,9 +203,14 @@ class LiveClassService
             'status_color' => $liveClass->status_color
         ];
     }
-
+  
     private function getViewerCount(LiveClass $liveClass): int
     {
+        // For YouTube classes
+        if (!empty($liveClass->youtube_video_id)) {
+            return $this->getYouTubeViewerCount($liveClass->youtube_video_id);
+        }
+
         try {
             $response = Http::timeout(3)->get(
                 config('liveclass.rtmp_stats_url') . '?app=live&name=' . $liveClass->stream_key
@@ -151,5 +225,40 @@ class LiveClassService
         }
 
         return $liveClass->viewer_count ?? 0;
+    }
+
+    /**
+     * Get YouTube viewer count
+     */
+    private function getYouTubeViewerCount(string $videoId): int
+    {
+        try {
+            $apiKey = config('youtube.api_key') ?? env('YOUTUBE_API_KEY');
+            
+            if (!$apiKey || $apiKey === 'AIzaSy_Your_Generated_Key_Here') {
+                return 0;
+            }
+
+            $response = Http::timeout(5)->get(
+                'https://www.googleapis.com/youtube/v3/videos',
+                [
+                    'part' => 'liveStreamingDetails',
+                    'id' => $videoId,
+                    'key' => $apiKey
+                ]
+            );
+
+            if ($response->successful()) {
+                $data = $response->json();
+                if (!empty($data['items']) && 
+                    isset($data['items'][0]['liveStreamingDetails']['concurrentViewers'])) {
+                    return (int) $data['items'][0]['liveStreamingDetails']['concurrentViewers'];
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error("YouTube viewer count error: " . $e->getMessage());
+        }
+
+        return 0;
     }
 }

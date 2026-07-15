@@ -28,7 +28,7 @@ class LiveClassController extends Controller
     {
         $class = LiveClass::findOrFail($id);
         $stats = $this->liveClassService->getClassStats($class);
-        
+            dd($stats);  
         return view('live-classes.show', compact('class', 'stats'));
     }
 
