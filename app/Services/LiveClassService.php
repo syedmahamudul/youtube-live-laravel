@@ -11,13 +11,16 @@ class LiveClassService
 {
     public function isClassLive(LiveClass $liveClass): bool
     {
+        // dd('ll');
         return Cache::remember("live_class_status_{$liveClass->id}", 15, function () use ($liveClass) {
+             dd($this->checkClassStatus($liveClass));
             return $this->checkClassStatus($liveClass);
         });
     }
 
     private function checkClassStatus(LiveClass $liveClass): bool
     {
+        // dd($liveClass->status);
         // If class is completed, it's not live
         if ($liveClass->status === 'completed') {
             return false;
@@ -27,14 +30,20 @@ class LiveClassService
         if ($liveClass->isUpcoming()) {
             return false;
         }
-
+        // dd('dd');
         // Check if it's a YouTube class by checking if youtube_video_id exists
-        if (!empty($liveClass->youtube_video_id)) {
+
+
+        if (!empty($liveClass->stream_url)) {
+            // dd('ll');
             return $this->checkYouTubeLiveStatus($liveClass);
+
+
         }
 
         // Method 1: Check via M3U8 playlist (for HLS streams)
         if ($this->checkM3U8Stream($liveClass)) {
+             dd('gg');
             return true;
         }
 
@@ -45,9 +54,10 @@ class LiveClassService
 
         // Method 3: Check via video server API
         if ($this->checkVideoServerAPI($liveClass)) {
+              dd('zz');
             return true;
         }
-
+        dd('lll');
         return false;
     }
 
@@ -57,13 +67,14 @@ class LiveClassService
     private function checkYouTubeLiveStatus(LiveClass $liveClass): bool
     {
         // dd('kk');
-        if (empty($liveClass->youtube_video_id)) {
+        if (empty($liveClass->stream_url)) {
             return false;
         }
+        // dd('kk');
 
         try {
             $apiKey = env('YOUTUBE_API_KEY');
-            
+                // dd($apiKey);
             if (!$apiKey || $apiKey === 'AIzaSy_Your_Generated_Key_Here') {
                 Log::warning('YouTube API key not configured');
                 return false;
@@ -75,11 +86,12 @@ class LiveClassService
                     'part' => 'liveStreamingDetails,snippet,status',
                     'id' => $liveClass->youtube_video_id,
                     'key' => $apiKey
-                ]
+                ] 
             );
 
             if ($response->successful()) {
                 $data = $response->json();
+                // dd($data);
                 
                 if (empty($data['items'])) {
                     return false;
@@ -193,7 +205,8 @@ class LiveClassService
     }
 
     public function getClassStats(LiveClass $liveClass): array
-    {
+    { 
+        // dd($liveClass);
         return [
             'is_live' => $this->isClassLive($liveClass),
             'viewer_count' => $this->getViewerCount($liveClass),

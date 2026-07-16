@@ -15,9 +15,10 @@ return new class extends Migration
             $table->id();
             $table->string('title');
             $table->text('description')->nullable();
-            $table->string('class_code')->unique();
+            $table->string('class_code')->nullable();
             $table->string('teacher_name');
-            $table->string('stream_key')->unique();
+            $table->string('stream_key')->nullable();
+            $table->string('youtube_video_id')->nullable();
             $table->string('stream_url')->nullable();
             $table->string('thumbnail')->nullable();
             $table->boolean('is_live')->default(false);
